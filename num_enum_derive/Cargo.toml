@@ -4,6 +4,7 @@ version = "0.4.2"  # Keep in sync with num_enum.
 authors = [
   "Daniel Wagner-Hall <dawagner@gmail.com>",
   "Daniel Henry-Mantilla <daniel.henry.mantilla@gmail.com>",
+  "Hannes Karppila <hannes.karppila@gmail.com>",
 ]
 description = "Internal implementation details for ::num_enum (Procedural macros to make inter-operation between primitives and enums easier)"
 edition = "2018"
@@ -16,17 +17,11 @@ license = "BSD-3-Clause"
 proc-macro = true
 
 [features]
-std = []
 complex-expressions = ["syn/full"]
-external_doc = []
 
-default = ["std"]  # disable to use in a `no_std` environment
-
-[package.metadata.docs.rs]
-features = ["external_doc"]
+default = []
 
 [dependencies]
 proc-macro2 = "1"
-proc-macro-crate = "0.1.4"
 quote = "1"
 syn = "1"

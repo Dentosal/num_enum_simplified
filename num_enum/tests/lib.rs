@@ -39,10 +39,7 @@ fn simple() {
     assert_eq!(zero, Ok(SimpleNumber::Zero));
 
     let three: Result<SimpleNumber, _> = 3u8.try_into();
-    assert_eq!(
-        three.unwrap_err().to_string(),
-        "No discriminant in enum `SimpleNumber` matches the value `3`"
-    );
+    assert_eq!(three, Err(()),);
 }
 
 #[derive(Debug, Eq, PartialEq, TryFromPrimitive)]
@@ -59,19 +56,13 @@ fn even() {
     assert_eq!(zero, Ok(EvenNumber::Zero));
 
     let one: Result<EvenNumber, _> = 1u8.try_into();
-    assert_eq!(
-        one.unwrap_err().to_string(),
-        "No discriminant in enum `EvenNumber` matches the value `1`"
-    );
+    assert_eq!(one, Err(()));
 
     let two: Result<EvenNumber, _> = 2u8.try_into();
     assert_eq!(two, Ok(EvenNumber::Two));
 
     let three: Result<EvenNumber, _> = 3u8.try_into();
-    assert_eq!(
-        three.unwrap_err().to_string(),
-        "No discriminant in enum `EvenNumber` matches the value `3`"
-    );
+    assert_eq!(three, Err(()));
 
     let four: Result<EvenNumber, _> = 4u8.try_into();
     assert_eq!(four, Ok(EvenNumber::Four));
@@ -95,10 +86,7 @@ fn skipped_value() {
     assert_eq!(one, Ok(SkippedNumber::One));
 
     let two: Result<SkippedNumber, _> = 2u8.try_into();
-    assert_eq!(
-        two.unwrap_err().to_string(),
-        "No discriminant in enum `SkippedNumber` matches the value `2`"
-    );
+    assert_eq!(two, Err(()));
 
     let three: Result<SkippedNumber, _> = 3u8.try_into();
     assert_eq!(three, Ok(SkippedNumber::Three));
@@ -125,10 +113,7 @@ fn wrong_order() {
     assert_eq!(one, Ok(WrongOrderNumber::One));
 
     let two: Result<WrongOrderNumber, _> = 2u8.try_into();
-    assert_eq!(
-        two.unwrap_err().to_string(),
-        "No discriminant in enum `WrongOrderNumber` matches the value `2`"
-    );
+    assert_eq!(two, Err(()));
 
     let three: Result<WrongOrderNumber, _> = 3u8.try_into();
     assert_eq!(three, Ok(WrongOrderNumber::Three));
@@ -165,10 +150,7 @@ mod complex {
         assert_eq!(two, Ok(DifferentValuesNumber::Two));
 
         let three: Result<DifferentValuesNumber, _> = 3u8.try_into();
-        assert_eq!(
-            three.unwrap_err().to_string(),
-            "No discriminant in enum `DifferentValuesNumber` matches the value `3`",
-        );
+        assert_eq!(three, Err(()));
 
         let four: Result<DifferentValuesNumber, _> = 4u8.try_into();
         assert_eq!(four, Ok(DifferentValuesNumber::Four));
@@ -201,10 +183,7 @@ fn missing_trailing_comma() {
     assert_eq!(one, Ok(MissingTrailingCommaNumber::One));
 
     let two: Result<MissingTrailingCommaNumber, _> = 2u8.try_into();
-    assert_eq!(
-        two.unwrap_err().to_string(),
-        "No discriminant in enum `MissingTrailingCommaNumber` matches the value `2`"
-    );
+    assert_eq!(two, Err(()));
 }
 
 #[derive(Debug, Eq, PartialEq, TryFromPrimitive)]
@@ -225,10 +204,7 @@ fn ignores_extra_attributes() {
     assert_eq!(one, Ok(ExtraAttributes::One));
 
     let two: Result<ExtraAttributes, _> = 2u8.try_into();
-    assert_eq!(
-        two.unwrap_err().to_string(),
-        "No discriminant in enum `ExtraAttributes` matches the value `2`"
-    );
+    assert_eq!(two, Err(()));
 }
 
 #[derive(Debug, Eq, PartialEq, TryFromPrimitive)]
@@ -247,10 +223,7 @@ fn visibility_is_fine() {
     assert_eq!(one, Ok(VisibleNumber::One));
 
     let two: Result<VisibleNumber, _> = 2u8.try_into();
-    assert_eq!(
-        two.unwrap_err().to_string(),
-        "No discriminant in enum `VisibleNumber` matches the value `2`"
-    );
+    assert_eq!(two, Err(()));
 }
 
 #[derive(Debug, Eq, PartialEq, TryFromPrimitive)]
@@ -269,10 +242,7 @@ fn error_variant_is_allowed() {
     assert_eq!(err, Ok(HasErrorVariant::Error));
 
     let unknown: Result<HasErrorVariant, _> = 2u8.try_into();
-    assert_eq!(
-        unknown.unwrap_err().to_string(),
-        "No discriminant in enum `HasErrorVariant` matches the value `2`"
-    );
+    assert_eq!(unknown, Err(()));
 }
 
 use num_enum::UnsafeFromPrimitive;

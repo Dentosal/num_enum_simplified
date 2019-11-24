@@ -1,8 +1,8 @@
 extern crate proc_macro;
+use ::core::iter::FromIterator;
 use ::proc_macro::TokenStream;
 use ::proc_macro2::Span;
 use ::quote::quote;
-use ::std::iter::FromIterator;
 use ::syn::{
     parse::{Parse, ParseStream},
     parse_macro_input, parse_quote, Data, DeriveInput, Error, Expr, Ident, LitInt, LitStr, Meta,
@@ -93,7 +93,7 @@ impl Parse for EnumInfo {
                     } else {
                         next_discriminant.clone()
                     };
-                    let ref variant_ident = variant.ident;
+                    let variant_ident = &variant.ident;
                     next_discriminant = parse_quote! {
                         #repr::wrapping_add(#variant_ident, 1)
                     };
@@ -114,22 +114,6 @@ impl Parse for EnumInfo {
 /// (It actually implements `From<Enum> for Primitive`)
 ///
 /// ## Allows turning an enum into a primitive.
-///
-/// ```rust
-/// use num_enum::IntoPrimitive;
-///
-/// #[derive(IntoPrimitive)]
-/// #[repr(u8)]
-/// enum Number {
-///     Zero,
-///     One,
-/// }
-///
-/// fn main() {
-///     let zero: u8 = Number::Zero.into();
-///     assert_eq!(zero, 0u8);
-/// }
-/// ```
 #[proc_macro_derive(IntoPrimitive)]
 pub fn derive_into_primitive(input: TokenStream) -> TokenStream {
     let EnumInfo { name, repr, .. } = parse_macro_input!(input as EnumInfo);
@@ -148,30 +132,6 @@ pub fn derive_into_primitive(input: TokenStream) -> TokenStream {
 /// Implements `TryFrom<Primitive>` for a `#[repr(Primitive)] enum`.
 ///
 /// Attempting to turn a primitive into an enum with try_from.
-/// ----------------------------------------------
-///
-/// ```rust
-/// use num_enum::TryFromPrimitive;
-/// use std::convert::TryFrom;
-///
-/// #[derive(Debug, Eq, PartialEq, TryFromPrimitive)]
-/// #[repr(u8)]
-/// enum Number {
-///     Zero,
-///     One,
-/// }
-///
-/// fn main() {
-///     let zero = Number::try_from(0u8);
-///     assert_eq!(zero, Ok(Number::Zero));
-///
-///     let three = Number::try_from(3u8);
-///     assert_eq!(
-///         three.unwrap_err().to_string(),
-///         "No discriminant in enum `Number` matches the value `3`",
-///     );
-/// }
-/// ```
 #[proc_macro_derive(TryFromPrimitive)]
 pub fn derive_try_from_primitive(input: TokenStream) -> TokenStream {
     let EnumInfo {
@@ -183,27 +143,14 @@ pub fn derive_try_from_primitive(input: TokenStream) -> TokenStream {
     let (match_const_exprs, enum_keys): (Vec<Expr>, Vec<Ident>) =
         value_expressions_to_enum_keys.into_iter().unzip();
 
-    let krate = Ident::new(
-        &::proc_macro_crate::crate_name("num_enum")
-            .map(::std::borrow::Cow::from)
-            .unwrap_or_else(|err| {
-                eprintln!("Warning: {}\n    => defaulting to `num_enum`", err,);
-                "num_enum".into()
-            }),
-        Span::call_site(),
-    );
-
     TokenStream::from(quote! {
-        impl ::#krate::TryFromPrimitive for #name {
+        impl ::num_enum::TryFromPrimitive for #name {
             type Primitive = #repr;
-
-            const NAME: &'static str = stringify!(#name);
 
             fn try_from_primitive (
                 number: Self::Primitive,
             ) -> ::core::result::Result<
-                Self,
-                ::#krate::TryFromPrimitiveError<Self>,
+                Self, ()
             >
             {
                 // Use intermediate const(s) so that enums defined like
@@ -220,25 +167,20 @@ pub fn derive_try_from_primitive(input: TokenStream) -> TokenStream {
                             #name::#enum_keys
                         ),
                     )*
-                    | _ => ::core::result::Result::Err(
-                        ::#krate::TryFromPrimitiveError { number }
-                    ),
+                    | _ => ::core::result::Result::Err(()),
                 }
             }
         }
 
         impl ::core::convert::TryFrom<#repr> for #name {
-            type Error = ::#krate::TryFromPrimitiveError<Self>;
+            type Error = ();
 
             #[inline]
             fn try_from (
                 number: #repr,
-            ) -> ::core::result::Result<
-                    Self,
-                    ::#krate::TryFromPrimitiveError<Self>,
-                >
+            ) -> ::core::result::Result<Self, ()>
             {
-                ::#krate::TryFromPrimitive::try_from_primitive(number)
+                ::num_enum::TryFromPrimitive::try_from_primitive(number)
             }
         }
     })
@@ -247,46 +189,15 @@ pub fn derive_try_from_primitive(input: TokenStream) -> TokenStream {
 /// Generates a `unsafe fn from_unchecked (number: Primitive) -> Self`
 /// associated function.
 ///
-/// Allows unsafely turning a primitive into an enum with from_unchecked.
-/// -------------------------------------------------------------
-///
-/// If you're really certain a conversion will succeed, and want to avoid a small amount of overhead, you can use unsafe
-/// code to do this conversion. Unless you have data showing that the match statement generated in the `try_from` above is a
-/// bottleneck for you, you should avoid doing this, as the unsafe code has potential to cause serious memory issues in
-/// your program.
-///
-/// ```rust
-/// use num_enum::UnsafeFromPrimitive;
-///
-/// #[derive(Debug, Eq, PartialEq, UnsafeFromPrimitive)]
-/// #[repr(u8)]
-/// enum Number {
-///     Zero,
-///     One,
-/// }
-///
-/// fn main() {
-///     assert_eq!(
-///         Number::Zero,
-///         unsafe { Number::from_unchecked(0_u8) },
-///     );
-///     assert_eq!(
-///         Number::One,
-///         unsafe { Number::from_unchecked(1_u8) },
-///     );
-/// }
-///
-/// unsafe fn undefined_behavior() {
-///     let _ = Number::from_unchecked(2); // 2 is not a valid discriminant!
-/// }
-/// ```
+/// Allows unsafely turning a primitive into an enum.
+/// Creating enum with invalid discriminants is undefined behavior.
 #[proc_macro_derive(UnsafeFromPrimitive)]
 pub fn derive_unsafe_from_primitive(stream: TokenStream) -> TokenStream {
     let EnumInfo { name, repr, .. } = parse_macro_input!(stream as EnumInfo);
 
     let doc_string = LitStr::new(
         &format!(
-            r#"
+            r#"1
 Transmutes `number: {repr}` into a [`{name}`].
 
 # Safety

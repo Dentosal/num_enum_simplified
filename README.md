@@ -1,12 +1,11 @@
-num_enum
-========
+num_enum :: simplified
+======================
+
+Simplified version of the `num_enum` crate.
 
 Procedural macros to make inter-operation between primitives and enums easier.
 This crate is no_std compatible.
 
-[![crates.io](https://img.shields.io/crates/v/num_enum.svg)](https://crates.io/crates/num_enum)
-[![Documentation](https://docs.rs/num_enum/badge.svg)](https://docs.rs/num_enum)
-[![Build Status](https://travis-ci.org/illicitonion/num_enum.svg?branch=master)](https://travis-ci.org/illicitonion/num_enum)
 
 Turning an enum into a primitive
 --------------------------------
@@ -34,7 +33,7 @@ Attempting to turn a primitive into an enum with try_from
 
 ```rust
 use num_enum::TryFromPrimitive;
-use std::convert::TryFrom;
+use core::convert::TryFrom;
 
 #[derive(Debug, Eq, PartialEq, TryFromPrimitive)]
 #[repr(u8)]
@@ -48,10 +47,7 @@ fn main() {
     assert_eq!(zero, Ok(Number::Zero));
 
     let three = Number::try_from(3u8);
-    assert_eq!(
-        three.unwrap_err().to_string(),
-        "No discriminant in enum `Number` matches the value `3`",
-    );
+    assert_eq!(three, Err(()));
 }
 ```
 
